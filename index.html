@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="image.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora Barril</title>
+  <style>
+    :root{
+      --bg:#0f1220; --panel:#151936; --kbd:#1a1f44; --kbd-accent:#27306a; --text:#e8ebff; --muted:#9aa2d6; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#5be37a;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji"; background:radial-gradient(1200px 700px at 10% -10%, #1a2048 0%, #0f1220 60%); color:var(--text); display:grid; place-items:center; padding:16px}
+
+    .calc{width:min(420px, 100%); background:var(--panel); border-radius:22px; box-shadow:var(--shadow); overflow:hidden; border:1px solid rgba(255,255,255,.06)}
+    .header{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)); border-bottom:1px solid rgba(255,255,255,.06)}
+    .title{font-weight:700; letter-spacing:.3px}
+    .theme{appearance:none; border:none; background:var(--kbd); color:var(--text); padding:8px 12px; border-radius:10px; cursor:pointer}
+
+    .display{padding:18px 16px 8px 16px; min-height:108px; display:flex; flex-direction:column; gap:6px}
+    .history{min-height:24px; color:var(--muted); font-size:14px; text-align:right; word-break:break-all}
+    .value{font-size:40px; text-align:right; font-weight:800; letter-spacing:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+    .keys{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px; background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));}
+    button.key{appearance:none; border:none; background:var(--kbd); color:var(--text); font-size:20px; font-weight:700; padding:16px; border-radius:16px; cursor:pointer; box-shadow:inset 0 -2px 0 rgba(255,255,255,.06); transition:transform .04s ease, filter .15s ease, background .2s ease}
+    button.key:hover{filter:brightness(1.06)}
+    button.key:active{transform:translateY(1px)}
+    .span-2{grid-column: span 2}
+    .op{background:var(--kbd-accent)}
+    .eq{background:linear-gradient(180deg, var(--accent), #517dff); color:#0b1029}
+    .danger{background:linear-gradient(180deg, #ff8e8e, var(--danger)); color:#2d0a0a}
+    .ok{background:linear-gradient(180deg, #86f6a0, var(--ok)); color:#0a2d19}
+
+    .sr-only{position:absolute; left:-10000px; width:1px; height:1px; overflow:hidden}
+    kbd{background:rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; font-size:.85em}
+    .footer{padding:10px 16px 16px; color:var(--muted); font-size:12px; display:flex; justify-content:space-between; align-items:center}
+    a{color:var(--accent); text-decoration:none}
+  </style>
+</head>
+<body>
+  <main class="calc" role="application" aria-label="Calculadora">
+    <div class="header">
+      <div class="title">Calculadora</div>
+      <button class="theme" id="themeBtn" aria-pressed="false" title="Alternar tema claro/escuro">🌗 Tema</button>
+    </div>
+
+    <section class="display" aria-live="polite" aria-atomic="true">
+      <div class="history" id="history" aria-label="Histórico"></div>
+      <div class="value" id="display" aria-label="Resultado">0</div>
+    </section>
+
+    <section class="keys" aria-label="Teclado da calculadora">
+      <button class="key danger" data-action="clear-all" title="Limpar tudo (Esc)">C</button>
+      <button class="key" data-action="clear-entry" title="Limpar entrada (Delete)">CE</button>
+      <button class="key" data-action="backspace" title="Apagar (Backspace)">⌫</button>
+      <button class="key op" data-op="/" title="Divisão (/)">÷</button>
+
+      <button class="key" data-num="7">7</button>
+      <button class="key" data-num="8">8</button>
+      <button class="key" data-num="9">9</button>
+      <button class="key op" data-op="*" title="Multiplicação (*)">×</button>
+
+      <button class="key" data-num="4">4</button>
+      <button class="key" data-num="5">5</button>
+      <button class="key" data-num="6">6</button>
+      <button class="key op" data-op="-" title="Subtração (-)">−</button>
+
+      <button class="key" data-num="1">1</button>
+      <button class="key" data-num="2">2</button>
+      <button class="key" data-num="3">3</button>
+      <button class="key op" data-op="+" title="Adição (+)">+</button>
+
+      <button class="key" data-action="negate" title="Inverter sinal (n)">±</button>
+      <button class="key" data-num="0">0</button>
+      <button class="key" data-action="decimal" title="Decimal (.)">,</button>
+      <button class="key eq" data-action="equals" title="Igual (= ou Enter)">=</button>
+
+      <button class="key span-2" data-action="percent" title="Porcentagem (%)">%</button>
+      <button class="key ok span-2" data-action="copy" title="Copiar resultado (Ctrl+C)">Copiar</button>
+    </section>
+
+    <div class="footer">
+      <div>
+        Atalhos: <kbd>0-9</kbd> <kbd>.</kbd> <kbd>+</kbd> <kbd>-</kbd> <kbd>*</kbd> <kbd>/</kbd> <kbd>%</kbd>
+        <kbd>Enter</kbd> <kbd>=</kbd> <kbd>Backspace</kbd> <kbd>Delete</kbd> <kbd>Esc</kbd>
+      </div>
+      <a href="#" id="helpLink" aria-describedby="helpText">Ajuda</a>
+    </div>
+    <div class="sr-only" id="helpText">Digite números e operadores do teclado. Use Enter para calcular, Esc para limpar, Delete para limpar a entrada e Backspace para apagar um dígito.</div>
+  </main>
+
+  <script>
+    (function(){
+      const display = document.getElementById('display');
+      const history = document.getElementById('history');
+      const keys = document.querySelector('.keys');
+      const themeBtn = document.getElementById('themeBtn');
+      const helpLink = document.getElementById('helpLink');
+
+      // Estado interno da calculadora
+      let current = '0';       // entrada atual como string
+      let accumulator = null;  // número acumulado
+      let operator = null;     // operador pendente: + - * /
+      let justEvaluated = false; // se o último passo foi "="
+
+      const MAX_LEN = 18; // limite para a string exibida
+
+      function format(nStr){
+        // Evita notação científica e limita casas
+        if (!isFinite(nStr)) return 'Erro';
+        const n = Number(nStr);
+        // Se for inteiro "pequeno", formata com separador
+        if (Number.isInteger(n) && Math.abs(n) < 1e12){
+          return n.toLocaleString('pt-BR');
+        }
+        // Caso contrário, limita a 12 casas significativas
+        return n.toPrecision(12).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
+      }
+
+      function updateDisplay(){
+        display.textContent = format(current);
+        const hist = (accumulator !== null && operator) ? `${format(accumulator)} ${opSymbol(operator)}` : '';
+        history.textContent = hist;
+      }
+
+      function opSymbol(op){
+        return ({'+':'+','-':'−','*':'×','/':'÷'})[op] || op;
+      }
+
+      function inputDigit(d){
+        if (justEvaluated){ current = '0'; justEvaluated = false; }
+        if (current === '0') current = d; else current += d;
+        if (current.length > MAX_LEN) current = current.slice(0, MAX_LEN);
+        updateDisplay();
+      }
+
+      function inputDecimal(){
+        if (justEvaluated){ current = '0'; justEvaluated = false; }
+        if (!current.includes('.')) current += '.';
+        updateDisplay();
+      }
+
+      function clearEntry(){ current = '0'; updateDisplay(); }
+      function clearAll(){ current = '0'; accumulator = null; operator = null; justEvaluated = false; updateDisplay(); }
+      function backspace(){ if (justEvaluated) return; current = current.length > 1 ? current.slice(0,-1) : '0'; updateDisplay(); }
+      function negate(){ if (current === '0') return; current = current.startsWith('-') ? current.slice(1) : '-' + current; updateDisplay(); }
+
+      function percent(){
+        // regra comum: transforma a entrada em porcentagem relativa ao acumulador se houver, senão divide por 100
+        let x = Number(current);
+        if (accumulator !== null && operator){ x = accumulator * (x/100); }
+        else { x = x/100; }
+        current = String(x);
+        updateDisplay();
+      }
+
+      function setOperator(op){
+        if (operator && !justEvaluated){ // encadear operações
+          evaluate();
+        } else {
+          accumulator = Number(current);
+        }
+        operator = op;
+        justEvaluated = false;
+        updateDisplay();
+        current = '0';
+      }
+
+      function safeOp(a, b, op){
+        switch(op){
+          case '+': return a + b;
+          case '-': return a - b;
+          case '*': return a * b;
+          case '/': return b === 0 ? Infinity : a / b;
+          default: return b;
+        }
+      }
+
+      function evaluate(){
+        if (operator === null || accumulator === null) return;
+        const a = accumulator;
+        const b = Number(current);
+        const result = safeOp(a, b, operator);
+        history.textContent = `${format(a)} ${opSymbol(operator)} ${format(b)} =`;
+        current = String(result);
+        accumulator = result;
+        operator = null;
+        justEvaluated = true;
+        updateDisplay();
+      }
+
+      function copyResult(){
+        const text = display.textContent;
+        navigator.clipboard?.writeText(text).then(()=>{
+          flash(display);
+        }).catch(()=>{});
+      }
+
+      function flash(el){
+        el.animate([{opacity:1},{opacity:.4},{opacity:1}], {duration:300, iterations:1});
+      }
+
+      // Eventos de clique
+      keys.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button.key');
+        if (!btn) return;
+        const d = btn.dataset.num;
+        const op = btn.dataset.op;
+        const action = btn.dataset.action;
+        if (d){ inputDigit(d); return; }
+        if (op){ setOperator(op); return; }
+        if (action){
+          switch(action){
+            case 'decimal': inputDecimal(); break;
+            case 'clear-entry': clearEntry(); break;
+            case 'clear-all': clearAll(); break;
+            case 'backspace': backspace(); break;
+            case 'negate': negate(); break;
+            case 'equals': evaluate(); break;
+            case 'percent': percent(); break;
+            case 'copy': copyResult(); break;
+          }
+        }
+      });
+
+      // Suporte ao teclado
+      window.addEventListener('keydown', (e)=>{
+        const key = e.key;
+        if (/^\d$/.test(key)) { inputDigit(key); return; }
+        if (key === '.' || key === ','){ e.preventDefault(); inputDecimal(); return; }
+        if (key === '+' || key === '-' || key === '*' || key === '/') { setOperator(key); return; }
+        if (key === '%' ) { percent(); return; }
+        if (key === 'Enter' || key === '=') { e.preventDefault(); evaluate(); return; }
+        if (key === 'Backspace'){ backspace(); return; }
+        if (key === 'Delete'){ clearEntry(); return; }
+        if (key === 'Escape'){ clearAll(); return; }
+        if (key.toLowerCase() === 'n'){ negate(); return; }
+        if ((e.ctrlKey || e.metaKey) && key.toLowerCase() === 'c'){ copyResult(); return; }
+      });
+
+      // Tema claro/escuro rápido
+      const light = {
+        '--bg':'#f1f3ff','--panel':'#ffffff','--kbd':'#eef1ff','--kbd-accent':'#dde5ff','--text':'#0b1029','--muted':'#606a96','--accent':'#3a63ff','--danger':'#ff5b5b','--ok':'#34c776'
+      };
+      const dark = {
+        '--bg':'#0f1220','--panel':'#151936','--kbd':'#1a1f44','--kbd-accent':'#27306a','--text':'#e8ebff','--muted':'#9aa2d6','--accent':'#7aa2ff','--danger':'#ff6b6b','--ok':'#5be37a'
+      };
+      function setTheme(vars){ for (const k in vars) document.documentElement.style.setProperty(k, vars[k]); }
+      let isLight = false;
+      themeBtn.addEventListener('click', ()=>{ isLight = !isLight; themeBtn.setAttribute('aria-pressed', String(isLight)); setTheme(isLight?light:dark); document.body.style.background = isLight? '#eef1ff' : 'radial-gradient(1200px 700px at 10% -10%, #1a2048 0%, #0f1220 60%)'; });
+
+      helpLink.addEventListener('click', (e)=>{ e.preventDefault(); alert('Use o teclado para digitar números e operadores. Enter calcula, Esc limpa, Delete limpa a entrada, Backspace apaga um dígito. Clique em Copiar para copiar o resultado.'); });
+
+      // Inicializa
+      updateDisplay();
+    })();
+  </script>
+</body>
+</html>
